@@ -21,4 +21,4 @@ def move_and_make_executable(file_path):
         except Exception as e:
             print(f"An error occurred: {e}")
 
-file_to_move = "unknown"
+file_to_move = "bin/unknown"
