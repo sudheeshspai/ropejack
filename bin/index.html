@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClickJack</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: black;
+            color: #00ff00;
+            font-family: monospace;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        h1 {
+            padding: 20px;
+            background: #111;
+            border-bottom: 2px solid #00ff00;
+        }
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .btn-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        button {
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: red;
+            color: white;
+        }
+        footer {
+            padding: 10px;
+            background: #111;
+            border-top: 2px solid #00ff00;
+        }
+        .warning {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: red;
+            padding: 20px;
+            border: 2px solid red;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>ClickJack</h1>
+    <div class="iframe-container">
+        <div class="btn-container">
+            <button onclick="showWarning()">Click Me</button>
+        </div>
+        <iframe src="https://mrfidal.in"></iframe>
+    </div>
+    <div class="warning" id="warningMessage">
+        This site is vulnerable and hackers can replace the button and add anything!
+    </div>
+    <footer>
+        <p>&copy; 2025 ClickJack. All rights reserved.</p>
+        <p>Tool by Sudheesh and contributed by MrFidal</p>
+    </footer>
+    <script>
+        function showWarning() {
+            document.getElementById('warningMessage').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('warningMessage').style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
