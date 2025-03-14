@@ -13,7 +13,6 @@ if result == "missing":
     file_path = os.path.expanduser('~/vulnerable_urls.txt')
     with open(file_path, 'a') as f:
         f.write(f"{url}\n")
-        print(f"Vulnerable URL saved to {file_path}")
     running_address = localrun.run_server('127.0.0.1', 8000, silent=True)
     print(f"Running port is : {running_address}")
 else:
