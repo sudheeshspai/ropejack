@@ -5,7 +5,7 @@ import localrun
 
 url = input("Enter the URL to check : ")
 
-result = vulheader.check(url, "Strict-Transport-Security")
+result = vulheader.check(url, "X-Frame-Options")
 
 if result == "missing":
     print("Strict-Transport-Security: Missing")
