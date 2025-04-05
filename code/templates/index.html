@@ -21,7 +21,7 @@
             const result = await response.json();
             alert(result.message);
             if (result.url) {
-                urlInput.value = '';
+                window.location.href = `/clickjack?url=${encodeURIComponent(result.url)}`;
             }
         }
     </script>
