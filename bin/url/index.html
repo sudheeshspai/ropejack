@@ -1,0 +1,21 @@
+<html>
+<head>
+    <title>Styled Input Box</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"></link>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-4">Enter URL</h2>
+        <div class="relative mb-4">
+            <input type="text" class="w-full p-4 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com">
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                <i class="fas fa-link text-gray-400"></i>
+            </div>
+        </div>
+        <button class="w-full bg-blue-500 text-white p-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            Submit
+        </button>
+    </div>
+</body>
+</html>
