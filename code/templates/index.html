@@ -3,43 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Styled Input Box</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>RopeJack - Clickjacking Vulnerability Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1 {
+            padding: 20px;
+            background: #111;
+            border-bottom: 2px solid #00ff00;
+            text-align: center;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 10px;
+            background: #0d0d0d;
+            border-bottom: 1px solid #1a4d1a;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+        nav a {
+            color: #559955;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        nav a:hover, nav a.active {
+            color: #00ff00;
+            text-shadow: 0 0 8px #00ff00;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .scanner-box {
+            border: 2px solid #00ff00;
+            background: #111;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.15);
+        }
+
+        .scanner-box h2 {
+            font-size: 1rem;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            color: #00ff00;
+            text-transform: uppercase;
+        }
+
+        .scanner-box p {
+            font-size: 0.78rem;
+            color: #559955;
+            margin-bottom: 28px;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0a0a0a;
+            border: 1.5px solid #00ff00;
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 0.95rem;
+            outline: none;
+            letter-spacing: 1px;
+            transition: box-shadow 0.2s;
+        }
+
+        .input-group input::placeholder {
+            color: #336633;
+        }
+
+        .input-group input:focus {
+            box-shadow: 0 0 12px rgba(0, 255, 0, 0.35);
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: #00ff00;
+            color: #000;
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+        }
+
+        button[type="submit"]:hover {
+            background: #000;
+            color: #00ff00;
+            box-shadow: 0 0 16px rgba(0, 255, 0, 0.5);
+            border: 1.5px solid #00ff00;
+        }
+
+        .result-box {
+            margin-top: 22px;
+            padding: 14px 16px;
+            border: 1.5px solid #00ff00;
+            background: #0a0a0a;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            display: none;
+            text-align: left;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .result-box.error {
+            border-color: red;
+            color: red;
+        }
+
+        .result-box.secure {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .result-box.vulnerable {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .blink {
+            animation: blink 1s step-start infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        footer {
+            padding: 14px;
+            background: #111;
+            border-top: 2px solid #00ff00;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #559955;
+            letter-spacing: 1px;
+        }
+
+        footer a {
+            color: #00ff00;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>ClickJack</h1>
+
+    <nav>
+        <a href="/" class="active">[ CLICKJACK SCANNER ]</a>
+        <a href="/subdomains">[ SUBDOMAIN FINDER ]</a>
+        <a href="/bulkscan">[ BULK SCAN ]</a>
+    </nav>
+    <div class="main">
+        <div class="scanner-box">
+            <h2>// Clickjacking Scanner</h2>
+            <p>&gt; Enter a URL to test for clickjacking vulnerability</p>
+            <form id="urlForm" onsubmit="submitUrl(event)">
+                <div class="input-group">
+                    <input type="text" id="urlInput" name="url" placeholder="https://example.com" required autocomplete="off" />
+                </div>
+                <button type="submit" id="scanBtn">[ SCAN ]</button>
+            </form>
+            <div class="result-box" id="resultBox"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 ropejack. All rights reserved.</p>
+        <p>Tool by <a href="https://github.com/sudheeshspai">Sudheesh</a> and contributed by <a href="https://github.com/mrfidal">MrFidal</a></p>
+    </footer>
+
     <script>
         async function submitUrl(event) {
             event.preventDefault();
-            const urlInput = document.querySelector('input[name="url"]');
-            const url = urlInput.value;
-            const response = await fetch('/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({ url })
-            });
-            const result = await response.json();
-            alert(result.message);
-            if (result.url) {
-                window.location.href = `/clickjack?url=${encodeURIComponent(result.url)}`;
+            const url = document.getElementById('urlInput').value;
+            const btn = document.getElementById('scanBtn');
+            const resultBox = document.getElementById('resultBox');
+
+            btn.textContent = '[ SCANNING... ]';
+            btn.disabled = true;
+            resultBox.style.display = 'none';
+
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ url })
+                });
+                const result = await response.json();
+
+                resultBox.style.display = 'block';
+
+                if (result.vulnerable === true) {
+                    resultBox.className = 'result-box vulnerable';
+                    let html = `&gt; STATUS : <span style="color:#ffaa00;font-weight:bold;">VULNERABLE</span><br>&gt; URL    : ${result.url}<br><br>`;
+
+                    if (result.missing && result.missing.length > 0) {
+                        html += `<span style="color:#ff4444;">&gt; MISSING HEADERS:</span><br>`;
+                        result.missing.forEach(h => {
+                            html += `&nbsp;&nbsp;&#x2718; <b>${h.header}</b><br>`;
+                            html += `&nbsp;&nbsp;&nbsp;&nbsp;&gt; FIX : <span style="color:#ffcc00;">${h.fix}</span><br>`;
+                            html += `&nbsp;&nbsp;&nbsp;&nbsp;&gt; REF : <a href="${h.docs}" target="_blank" style="color:#88aaff;">${h.docs}</a><br>`;
+                        });
+                    }
+
+                    if (result.present && result.present.length > 0) {
+                        html += `<br><span style="color:#00ff00;">&gt; PRESENT HEADERS:</span><br>`;
+                        result.present.forEach(h => {
+                            html += `&nbsp;&nbsp;&#x2714; <b>${h.header}</b>: <span style="color:#559955;">${h.value}</span><br>`;
+                        });
+                    }
+
+                    resultBox.innerHTML = html;
+                } else {
+                    resultBox.className = 'result-box secure';
+                    let html = `&gt; STATUS : <span style="color:#00ff00;font-weight:bold;">SECURE</span><br>&gt; URL    : ${result.url}<br>&gt; MSG    : ${result.message}<br>`;
+
+                    if (result.present && result.present.length > 0) {
+                        html += `<br><span style="color:#00ff00;">&gt; PROTECTED BY:</span><br>`;
+                        result.present.forEach(h => {
+                            html += `&nbsp;&nbsp;&#x2714; <b>${h.header}</b>: <span style="color:#559955;">${h.value}</span><br>`;
+                        });
+                    }
+
+                    resultBox.innerHTML = html;
+                }
+            } catch (err) {
+                resultBox.style.display = 'block';
+                resultBox.className = 'result-box error';
+                resultBox.innerHTML = `&gt; ERROR  : Could not connect to server.`;
             }
+
+            btn.textContent = '[ SCAN ]';
+            btn.disabled = false;
         }
     </script>
-</head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h2 class="text-2xl font-bold mb-4">Enter URL</h2>
-        <form id="urlForm" onsubmit="submitUrl(event)">
-            <div class="relative mb-4">
-                <input type="text" name="url" class="w-full p-4 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://example.com" required>
-                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <i class="fas fa-link text-gray-400"></i>
-                </div>
-            </div>
-            <button type="submit" class="w-full bg-blue-500 text-white p-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                Submit
-            </button>
-        </form>
-    </div>
 </body>
 </html>

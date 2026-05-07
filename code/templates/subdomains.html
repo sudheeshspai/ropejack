@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RopeJack - Subdomain Finder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 20px;
+            background: #111;
+            border-bottom: 2px solid #00ff00;
+            text-align: center;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 10px;
+            background: #0d0d0d;
+            border-bottom: 1px solid #1a4d1a;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+        nav a {
+            color: #559955;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: #00ff00;
+            text-shadow: 0 0 8px #00ff00;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .scanner-box {
+            border: 2px solid #00ff00;
+            background: #111;
+            padding: 36px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.12);
+        }
+
+        .scanner-box h2 {
+            font-size: 1rem;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .scanner-box p {
+            font-size: 0.78rem;
+            color: #559955;
+            margin-bottom: 24px;
+            letter-spacing: 1px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .input-row input {
+            flex: 1;
+            padding: 13px 16px;
+            background: #0a0a0a;
+            border: 1.5px solid #00ff00;
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 0.95rem;
+            outline: none;
+            letter-spacing: 1px;
+            transition: box-shadow 0.2s;
+        }
+
+        .input-row input::placeholder {
+            color: #336633;
+        }
+
+        .input-row input:focus {
+            box-shadow: 0 0 12px rgba(0, 255, 0, 0.35);
+        }
+
+        .btn {
+            padding: 13px 22px;
+            background: #00ff00;
+            color: #000;
+            font-family: monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border: 1.5px solid #00ff00;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #000;
+            color: #00ff00;
+            box-shadow: 0 0 14px rgba(0, 255, 0, 0.45);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #00ff00;
+        }
+
+        .btn-outline:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .status-bar {
+            font-size: 0.8rem;
+            color: #559955;
+            margin-bottom: 14px;
+            letter-spacing: 1px;
+            min-height: 18px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .results-header span {
+            font-size: 0.8rem;
+            color: #559955;
+            letter-spacing: 1px;
+        }
+
+        .download-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .download-btns .btn {
+            padding: 7px 14px;
+            font-size: 0.78rem;
+        }
+
+        .results-list {
+            background: #0a0a0a;
+            border: 1.5px solid #1a4d1a;
+            max-height: 380px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .results-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .results-list::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        .results-list::-webkit-scrollbar-thumb {
+            background: #00ff00;
+        }
+
+        .subdomain-item {
+            padding: 8px 14px;
+            border-bottom: 1px solid #0f2e0f;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .subdomain-item:last-child {
+            border-bottom: none;
+        }
+
+        .subdomain-item:hover {
+            background: #0f2e0f;
+        }
+
+        .subdomain-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .subdomain-name::before {
+            content: '>';
+            color: #336633;
+            font-size: 0.75rem;
+        }
+
+        .subdomain-ip {
+            color: #336633;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: #336633;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        footer {
+            padding: 14px;
+            background: #111;
+            border-top: 2px solid #00ff00;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #559955;
+            letter-spacing: 1px;
+        }
+
+        footer a {
+            color: #00ff00;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <header>ClickJack</header>
+
+    <nav>
+        <a href="/">[ CLICKJACK SCANNER ]</a>
+        <a href="/subdomains" class="active">[ SUBDOMAIN FINDER ]</a>
+        <a href="/bulkscan">[ BULK SCAN ]</a>
+    </nav>
+
+    <div class="main">
+        <div class="scanner-box">
+            <h2>// Subdomain Finder</h2>
+            <p>&gt; Enumerate subdomains </p>
+
+            <div class="input-row">
+                <input type="text" id="domainInput" placeholder="example.com" autocomplete="off" />
+                <button class="btn" id="searchBtn" onclick="searchSubdomains()">[ SEARCH ]</button>
+            </div>
+
+            <div class="status-bar" id="statusBar">&gt; Waiting for input...</div>
+
+            <div class="results-header">
+                <span id="countLabel"></span>
+                <div class="download-btns" id="downloadBtns" style="display:none;">
+                    <button class="btn btn-outline" onclick="downloadTxt()">[ ↓ TXT ]</button>
+                    <button class="btn btn-outline" onclick="downloadPdf()">[ ↓ PDF ]</button>
+                </div>
+            </div>
+
+            <div class="results-list" id="resultsList">
+                <div class="empty-state">Enter a domain to begin enumeration...</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 ropejack. All rights reserved.</p>
+        <p>Tool by <a href="https://github.com/sudheeshspai">Sudheesh</a> and contributed by <a
+                href="https://github.com/mrfidal">MrFidal</a></p>
+    </footer>
+
+    <script>
+        let subdomains = [];
+        let currentDomain = '';
+
+        async function searchSubdomains() {
+            const domain = document.getElementById('domainInput').value.trim();
+            if (!domain) return;
+
+            currentDomain = domain;
+            subdomains = [];
+
+            const btn = document.getElementById('searchBtn');
+            const statusBar = document.getElementById('statusBar');
+            const resultsList = document.getElementById('resultsList');
+            const downloadBtns = document.getElementById('downloadBtns');
+            const countLabel = document.getElementById('countLabel');
+
+            btn.disabled = true;
+            btn.textContent = '[ SEARCHING... ]';
+            downloadBtns.style.display = 'none';
+            countLabel.textContent = '';
+            resultsList.innerHTML = '<div class="empty-state">&gt; Querying /div>';
+            statusBar.textContent = `> Fetching certificate transparency logs for: ${domain}`;
+
+            try {
+                const response = await fetch(`/subdomains/search?domain=${encodeURIComponent(domain)}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    statusBar.textContent = `> ERROR: ${data.error}`;
+                    resultsList.innerHTML = `<div class="empty-state" style="color:red;">&gt; ${data.error}</div>`;
+                } else {
+                    subdomains = data.subdomains;
+                    renderResults(subdomains, domain);
+                    statusBar.textContent = `> Scan complete. Found ${subdomains.length} unique subdomains.`;
+                    countLabel.textContent = `${subdomains.length} subdomains found`;
+                    if (subdomains.length > 0) downloadBtns.style.display = 'flex';
+                }
+            } catch (err) {
+                statusBar.textContent = '> ERROR: Could not connect to server.';
+                resultsList.innerHTML = `<div class="empty-state" style="color:red;">&gt; Connection error.</div>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = '[ SEARCH ]';
+        }
+
+        function renderResults(list, domain) {
+            const resultsList = document.getElementById('resultsList');
+            if (list.length === 0) {
+                resultsList.innerHTML = '<div class="empty-state">&gt; No subdomains found for this domain.</div>';
+                return;
+            }
+            resultsList.innerHTML = list.map(item =>
+                `<div class="subdomain-item">
+                    <span class="subdomain-name">${item.subdomain}</span>
+                    <span class="subdomain-ip">${item.ip}</span>
+                </div>`
+            ).join('');
+        }
+
+        function downloadTxt() {
+            const lines = subdomains.map(item => `${item.subdomain}\t${item.ip}`);
+            const header = `# RopeJack Subdomain Scan - ${currentDomain}\n# Found: ${subdomains.length} subdomains\n# Format: subdomain[TAB]ip\n\n`;
+            const blob = new Blob([header + lines.join('\n')], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${currentDomain}_subdomains.txt`;
+            a.click();
+        }
+
+        function downloadPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFont('courier', 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(0, 200, 0);
+            doc.text(`Subdomain Scan: ${currentDomain}`, 14, 18);
+
+            doc.setFontSize(9);
+            doc.setTextColor(0, 180, 0);
+            doc.text(`Total: ${subdomains.length} | Method: DNS Brute-Force | Tool: RopeJack`, 14, 26);
+
+            doc.setDrawColor(0, 200, 0);
+            doc.line(14, 29, 196, 29);
+
+            doc.setFontSize(10);
+            doc.setFont('courier', 'normal');
+            doc.setTextColor(0, 160, 0);
+
+            let y = 36;
+            const pageHeight = doc.internal.pageSize.height;
+
+            subdomains.forEach(item => {
+                if (y > pageHeight - 15) {
+                    doc.addPage();
+                    y = 15;
+                }
+                doc.text(`> ${item.subdomain}`, 14, y);
+                doc.setTextColor(0, 100, 0);
+                doc.text(item.ip, 150, y);
+                doc.setTextColor(0, 160, 0);
+                y += 6;
+            });
+
+            doc.save(`${currentDomain}_subdomains.pdf`);
+        }
+
+        document.getElementById('domainInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') searchSubdomains();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RopeJack - Bulk Clickjack Scanner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0a;
+            color: #00ff00;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 20px;
+            background: #111;
+            border-bottom: 2px solid #00ff00;
+            text-align: center;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            padding: 10px;
+            background: #0d0d0d;
+            border-bottom: 1px solid #1a4d1a;
+            font-size: 0.78rem;
+            letter-spacing: 2px;
+            flex-wrap: wrap;
+        }
+        nav a { color: #559955; text-decoration: none; transition: color 0.2s; }
+        nav a:hover, nav a.active { color: #00ff00; text-shadow: 0 0 8px #00ff00; }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            gap: 20px;
+        }
+
+        /* ── Upload Zone ── */
+        .upload-zone {
+            width: 100%;
+            max-width: 860px;
+            border: 2px dashed #336633;
+            background: #0d0d0d;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: #00ff00;
+            box-shadow: 0 0 20px rgba(0,255,0,0.15);
+        }
+        .upload-zone p { font-size: 0.9rem; color: #559955; letter-spacing: 1px; }
+        .upload-zone .icon { font-size: 2rem; margin-bottom: 10px; }
+        .upload-zone .file-name { margin-top: 10px; color: #00ff00; font-size: 0.85rem; }
+
+        /* ── URL Preview ── */
+        .url-preview {
+            width: 100%;
+            max-width: 860px;
+            background: #111;
+            border: 1.5px solid #1a4d1a;
+            display: none;
+        }
+        .url-preview-header {
+            padding: 8px 14px;
+            border-bottom: 1px solid #1a4d1a;
+            font-size: 0.8rem;
+            color: #559955;
+            display: flex;
+            justify-content: space-between;
+        }
+        .url-preview-list {
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 8px 14px;
+            font-size: 0.82rem;
+        }
+        .url-preview-list div { padding: 3px 0; color: #00cc00; }
+        .url-preview-list div::before { content: '> '; color: #336633; }
+
+        /* ── Start Button ── */
+        .start-btn {
+            width: 100%;
+            max-width: 860px;
+            padding: 14px;
+            background: #00ff00;
+            color: #000;
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            border: 1.5px solid #00ff00;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .start-btn:hover:not(:disabled) {
+            background: #000;
+            color: #00ff00;
+            box-shadow: 0 0 16px rgba(0,255,0,0.4);
+        }
+        .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ── Split Panel ── */
+        .split-panel {
+            width: 100%;
+            max-width: 860px;
+            display: none;
+            gap: 14px;
+        }
+        .split-panel.visible { display: flex; }
+
+        /* Terminal */
+        .terminal-panel {
+            flex: 1.4;
+            border: 1.5px solid #00ff00;
+            background: #050505;
+            display: flex;
+            flex-direction: column;
+            min-height: 420px;
+            max-height: 420px;
+        }
+        .panel-header {
+            padding: 7px 12px;
+            background: #111;
+            border-bottom: 1px solid #00ff00;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: #00ff00;
+        }
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            line-height: 1.7;
+        }
+        .terminal-output::-webkit-scrollbar { width: 4px; }
+        .terminal-output::-webkit-scrollbar-thumb { background: #00ff00; }
+
+        .t-scan   { color: #aaaaaa; }
+        .t-vuln   { color: #ff6600; }
+        .t-secure { color: #00cc00; }
+        .t-error  { color: #ff3333; }
+        .t-done   { color: #00ff00; font-weight: bold; }
+        .t-info   { color: #559955; }
+
+        /* Results Panel */
+        .results-panel {
+            flex: 1;
+            border: 1.5px solid #336633;
+            background: #050505;
+            display: flex;
+            flex-direction: column;
+            min-height: 420px;
+            max-height: 420px;
+        }
+        .results-body { flex: 1; overflow-y: auto; }
+        .results-body::-webkit-scrollbar { width: 4px; }
+        .results-body::-webkit-scrollbar-thumb { background: #336633; }
+
+        .result-section { border-bottom: 1px solid #1a2d1a; }
+        .result-section-title {
+            padding: 7px 12px;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .vuln-title { color: #ff6600; }
+        .secure-title { color: #00cc00; }
+
+        .result-item {
+            padding: 6px 14px 6px 20px;
+            font-size: 0.75rem;
+            border-bottom: 1px solid #0a1a0a;
+            word-break: break-all;
+        }
+        .result-item .site { color: #cccccc; }
+        .result-item .detail { color: #ff4444; font-size: 0.7rem; margin-top: 2px; }
+        .result-item.secure-item .site { color: #559955; }
+
+        /* ── Report Section ── */
+        .report-section {
+            width: 100%;
+            max-width: 860px;
+            border: 2px solid #00ff00;
+            background: #0d0d0d;
+            padding: 20px 24px;
+            display: none;
+            text-align: center;
+        }
+        .report-section p { font-size: 0.9rem; color: #00ff00; margin-bottom: 16px; letter-spacing: 1px; }
+        .report-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .report-btn {
+            padding: 12px 24px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border: 1.5px solid #00ff00;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .report-btn-solid { background: #00ff00; color: #000; }
+        .report-btn-solid:hover { background: #000; color: #00ff00; box-shadow: 0 0 14px rgba(0,255,0,0.4); }
+        .report-btn-outline { background: transparent; color: #00ff00; }
+        .report-btn-outline:hover { background: #00ff00; color: #000; }
+
+        footer {
+            padding: 14px;
+            background: #111;
+            border-top: 2px solid #00ff00;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #559955;
+            letter-spacing: 1px;
+        }
+        footer a { color: #00ff00; text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 640px) {
+            .split-panel { flex-direction: column; }
+            .terminal-panel, .results-panel { min-height: 280px; max-height: 280px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>ClickJack</header>
+<nav>
+    <a href="/">[ CLICKJACK SCANNER ]</a>
+    <a href="/subdomains">[ SUBDOMAIN FINDER ]</a>
+    <a href="/bulkscan" class="active">[ BULK SCAN ]</a>
+</nav>
+
+<div class="main">
+
+    <!-- Upload -->
+    <div class="upload-zone" id="uploadZone">
+        <div class="icon">&#x1F4C2;</div>
+        <p>Drop a <b>TXT</b> file here or click to upload</p>
+        <p style="font-size:0.72rem;margin-top:6px;color:#336633;">One URL per line &nbsp;|&nbsp; e.g. https://example.com</p>
+        <div class="file-name" id="fileName"></div>
+        <input type="file" id="fileInput" accept=".txt,.pdf" hidden>
+    </div>
+
+    <!-- URL Preview -->
+    <div class="url-preview" id="urlPreview">
+        <div class="url-preview-header">
+            <span id="urlCountLabel">&gt; 0 URLs loaded</span>
+            <span style="cursor:pointer;color:#ff4444;" onclick="clearFile()">[ CLEAR ]</span>
+        </div>
+        <div class="url-preview-list" id="urlList"></div>
+    </div>
+
+    <!-- Start -->
+    <button class="start-btn" id="startBtn" onclick="startScan()" disabled>[ START BULK SCAN ]</button>
+
+    <!-- Split panel -->
+    <div class="split-panel" id="splitPanel">
+        <div class="terminal-panel">
+            <div class="panel-header">&gt;&gt; TERMINAL OUTPUT</div>
+            <div class="terminal-output" id="terminalOutput"></div>
+        </div>
+        <div class="results-panel">
+            <div class="panel-header">&gt;&gt; RESULTS SUMMARY</div>
+            <div class="results-body">
+                <div class="result-section">
+                    <div class="result-section-title vuln-title">
+                        &#x26A0; VULNERABLE &nbsp;<span id="vulnCount">0</span>
+                    </div>
+                    <div id="vulnList"></div>
+                </div>
+                <div class="result-section">
+                    <div class="result-section-title secure-title">
+                        &#x2714; SECURE &nbsp;<span id="secureCount">0</span>
+                    </div>
+                    <div id="secureList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report -->
+    <div class="report-section" id="reportSection">
+        <p>&gt; Scan complete! Do you want a report?</p>
+        <div class="report-btns">
+            <button class="report-btn report-btn-solid" onclick="downloadPdfReport()">[ &#x2193; PDF REPORT ]</button>
+            <button class="report-btn report-btn-outline" onclick="downloadTxtReport()">[ &#x2193; TXT REPORT ]</button>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <p>&copy; 2025 ropejack. All rights reserved.</p>
+    <p>Tool by <a href="https://github.com/sudheeshspai">Sudheesh</a> and contributed by <a href="https://github.com/mrfidal">MrFidal</a></p>
+</footer>
+
+<script>
+    let urls = [];
+    let scanResults = [];
+    let vulnCount = 0;
+    let secureCount = 0;
+    let scanning = false;
+
+    // ── File handling ────────────────────────────────────────────────────────
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput  = document.getElementById('fileInput');
+
+    uploadZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', e => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+
+    // Take every non-empty line, add https:// if missing
+    function parseLines(text) {
+        return text.split('\n')
+            .map(l => l.trim())
+            .filter(l => l.length > 0)
+            .map(l => {
+                if (!l.startsWith('http://') && !l.startsWith('https://')) {
+                    return 'https://' + l;
+                }
+                return l;
+            });
+    }
+
+    // Extract URLs from mixed content text using regex
+    function extractUrls(text) {
+        const found = new Set();
+        const urlRegex = /https?:\/\/[^\s,;"'<>\]\[()]+/gi;
+        let match;
+        while ((match = urlRegex.exec(text)) !== null) {
+            found.add(match[0].replace(/[.,;:)]+$/, ''));
+        }
+        const domainRegex = /\b([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b/g;
+        while ((match = domainRegex.exec(text)) !== null) {
+            let domain = match[0].replace(/[.,;:)]+$/, '');
+            const already = [...found].some(u => u.includes(domain));
+            if (!already) found.add('https://' + domain);
+        }
+        return [...found];
+    }
+
+    async function handleFile(file) {
+        if (!file) return;
+        document.getElementById('fileName').textContent = '> ' + file.name;
+        document.getElementById('urlPreview').style.display = 'none';
+        document.getElementById('startBtn').disabled = true;
+
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+            await parsePdf(file);
+        } else {
+            // TXT: just take every non-empty line
+            const text = await file.text();
+            urls = parseLines(text);
+            if (urls.length === 0) {
+                document.getElementById('fileName').textContent = '> File is empty or has no lines.';
+                return;
+            }
+            showPreview();
+        }
+    }
+
+
+    async function parsePdf(file) {
+        document.getElementById('fileName').textContent = '> Parsing PDF...';
+        try {
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let allText = '';
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                allText += content.items.map(item => item.str).join(' ') + '\n';
+            }
+
+            urls = extractUrls(allText);
+
+            if (urls.length === 0) {
+                document.getElementById('fileName').textContent =
+                    '> No URLs found in PDF (image-only PDF cannot be read — use a TXT file instead)';
+                document.getElementById('startBtn').disabled = true;
+                return;
+            }
+            document.getElementById('fileName').textContent = '> ' + file.name;
+            showPreview();
+        } catch (e) {
+            document.getElementById('fileName').textContent = '> Error reading PDF: ' + e.message;
+        }
+    }
+
+
+
+    function showPreview() {
+        const preview = document.getElementById('urlPreview');
+        const list    = document.getElementById('urlList');
+        document.getElementById('urlCountLabel').textContent = `> ${urls.length} URLs loaded`;
+        list.innerHTML = urls.map(u => `<div>${u}</div>`).join('');
+        preview.style.display = 'block';
+        document.getElementById('startBtn').disabled = urls.length === 0;
+    }
+
+    function clearFile() {
+        urls = [];
+        fileInput.value = '';
+        document.getElementById('fileName').textContent = '';
+        document.getElementById('urlPreview').style.display = 'none';
+        document.getElementById('startBtn').disabled = true;
+    }
+
+    // ── Scan ─────────────────────────────────────────────────────────────────
+    async function startScan() {
+        if (scanning || urls.length === 0) return;
+        scanning = true;
+        scanResults = [];
+        vulnCount = 0;
+        secureCount = 0;
+
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('splitPanel').classList.add('visible');
+        document.getElementById('reportSection').style.display = 'none';
+        document.getElementById('terminalOutput').innerHTML = '';
+        document.getElementById('vulnList').innerHTML = '';
+        document.getElementById('secureList').innerHTML = '';
+        document.getElementById('vulnCount').textContent = '0';
+        document.getElementById('secureCount').textContent = '0';
+
+        term(`RopeJack Bulk Scanner v1.0`, 't-info');
+        term(`Target count : ${urls.length}`, 't-info');
+        term(`─────────────────────────────────`, 't-info');
+
+        for (let i = 0; i < urls.length; i++) {
+            const url = urls[i];
+            term(`[${i+1}/${urls.length}] Scanning: ${url}`, 't-scan');
+
+            try {
+                const resp = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ url })
+                });
+                const data = await resp.json();
+                data.inputUrl = url;
+                scanResults.push(data);
+
+                if (data.vulnerable) {
+                    const missing = data.missing ? data.missing.map(m => m.header).join(', ') : 'Unknown';
+                    term(`  ✘ VULNERABLE — ${data.url}`, 't-vuln');
+                    term(`    Missing: ${missing}`, 't-vuln');
+                    addVulnItem(data);
+                    vulnCount++;
+                    document.getElementById('vulnCount').textContent = vulnCount;
+                } else {
+                    term(`  ✔ SECURE    — ${data.url}`, 't-secure');
+                    addSecureItem(data);
+                    secureCount++;
+                    document.getElementById('secureCount').textContent = secureCount;
+                }
+            } catch (e) {
+                term(`  ! ERROR    — ${url} : ${e.message}`, 't-error');
+            }
+
+            await sleep(100);
+        }
+
+        term(`─────────────────────────────────`, 't-info');
+        term(`SCAN COMPLETE  |  Vulnerable: ${vulnCount}  |  Secure: ${secureCount}`, 't-done');
+        document.getElementById('reportSection').style.display = 'block';
+        scanning = false;
+        document.getElementById('startBtn').disabled = false;
+    }
+
+    function term(text, cls) {
+        const el = document.createElement('div');
+        el.className = cls;
+        el.textContent = text;
+        const out = document.getElementById('terminalOutput');
+        out.appendChild(el);
+        out.scrollTop = out.scrollHeight;
+    }
+
+    function addVulnItem(data) {
+        const missing = data.missing ? data.missing.map(m => m.header).join(', ') : '';
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        div.innerHTML = `<div class="site">✘ ${data.url}</div><div class="detail">Missing: ${missing}</div>`;
+        document.getElementById('vulnList').appendChild(div);
+    }
+
+    function addSecureItem(data) {
+        const div = document.createElement('div');
+        div.className = 'result-item secure-item';
+        div.innerHTML = `<div class="site">✔ ${data.url}</div>`;
+        document.getElementById('secureList').appendChild(div);
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ── Reports ───────────────────────────────────────────────────────────────
+    function downloadTxtReport() {
+        const lines = [
+            'ROPEJACK BULK SCAN REPORT',
+            `Date    : ${new Date().toLocaleString()}`,
+            `Total   : ${scanResults.length}`,
+            `Vulnerable: ${vulnCount}   Secure: ${secureCount}`,
+            '',
+            '═══════ VULNERABLE SITES ═══════',
+        ];
+        scanResults.filter(r => r.vulnerable).forEach(r => {
+            lines.push(`\n[VULNERABLE] ${r.url}`);
+            if (r.missing) r.missing.forEach(m => {
+                lines.push(`  Missing : ${m.header}`);
+                lines.push(`  Fix     : ${m.fix}`);
+                lines.push(`  Ref     : ${m.docs}`);
+            });
+        });
+        lines.push('', '═══════ SECURE SITES ═══════');
+        scanResults.filter(r => !r.vulnerable).forEach(r => {
+            lines.push(`[SECURE] ${r.url}`);
+        });
+        const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'ropejack_bulk_report.txt';
+        a.click();
+    }
+
+    function downloadPdfReport() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const G = (v) => [0, v, 0];
+
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(18);
+        doc.setTextColor(...G(200));
+        doc.text('ROPEJACK BULK SCAN REPORT', 14, 18);
+
+        doc.setFontSize(9);
+        doc.setFont('courier', 'normal');
+        doc.setTextColor(...G(140));
+        doc.text(`Date: ${new Date().toLocaleString()}   |   Total: ${scanResults.length}   |   Vulnerable: ${vulnCount}   Secure: ${secureCount}`, 14, 26);
+
+        doc.setDrawColor(...G(180));
+        doc.line(14, 29, 196, 29);
+
+        let y = 36;
+        const ph = doc.internal.pageSize.height;
+
+        const chk = (n) => { if (y + n > ph - 10) { doc.addPage(); y = 15; } };
+
+        // Vulnerable
+        chk(10);
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(220, 100, 0);
+        doc.text(`VULNERABLE SITES (${vulnCount})`, 14, y); y += 8;
+
+        scanResults.filter(r => r.vulnerable).forEach(r => {
+            chk(20);
+            doc.setFont('courier', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(255, 120, 0);
+            doc.text(`✘ ${r.url}`, 14, y); y += 6;
+            if (r.missing) r.missing.forEach(m => {
+                chk(14);
+                doc.setFont('courier', 'normal');
+                doc.setTextColor(180, 80, 0);
+                doc.text(`  Missing : ${m.header}`, 14, y); y += 5;
+                doc.text(`  Fix     : ${m.fix}`, 14, y); y += 5;
+            });
+            y += 2;
+        });
+
+        // Secure
+        chk(14);
+        y += 4;
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(...G(180));
+        doc.text(`SECURE SITES (${secureCount})`, 14, y); y += 8;
+
+        scanResults.filter(r => !r.vulnerable).forEach(r => {
+            chk(8);
+            doc.setFont('courier', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(...G(140));
+            doc.text(`✔ ${r.url}`, 14, y); y += 6;
+        });
+
+        doc.save('ropejack_bulk_report.pdf');
+    }
+</script>
+</body>
+</html>

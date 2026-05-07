@@ -100,7 +100,7 @@
         }
 
         function setIframeSource(url) {
-            document.getElementById('targetIframe').src = `https://vulsub.top/clickjacking/open=${encodeURIComponent(url)}`;
+            document.getElementById('targetIframe').src = url;
         }
 
         const urlParams = new URLSearchParams(window.location.search);
