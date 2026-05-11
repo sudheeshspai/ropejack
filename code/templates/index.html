@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -47,7 +48,8 @@
             transition: color 0.2s;
         }
 
-        nav a:hover, nav a.active {
+        nav a:hover,
+        nav a.active {
             color: #00ff00;
             text-shadow: 0 0 8px #00ff00;
         }
@@ -161,15 +163,25 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-6px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .blink {
             animation: blink 1s step-start infinite;
         }
+
         @keyframes blink {
-            50% { opacity: 0; }
+            50% {
+                opacity: 0;
+            }
         }
 
         footer {
@@ -192,8 +204,9 @@
         }
     </style>
 </head>
+
 <body>
-    <h1>ClickJack</h1>
+    <h1>Cytronex</h1>
 
     <nav>
         <a href="/" class="active">[ CLICKJACK SCANNER ]</a>
@@ -206,7 +219,8 @@
             <p>&gt; Enter a URL to test for clickjacking vulnerability</p>
             <form id="urlForm" onsubmit="submitUrl(event)">
                 <div class="input-group">
-                    <input type="text" id="urlInput" name="url" placeholder="https://example.com" required autocomplete="off" />
+                    <input type="text" id="urlInput" name="url" placeholder="https://example.com" required
+                        autocomplete="off" />
                 </div>
                 <button type="submit" id="scanBtn">[ SCAN ]</button>
             </form>
@@ -216,7 +230,8 @@
 
     <footer>
         <p>&copy; 2025 ropejack. All rights reserved.</p>
-        <p>Tool by <a href="https://github.com/sudheeshspai">Sudheesh</a> and contributed by <a href="https://github.com/mrfidal">MrFidal</a></p>
+        <p>Tool by <a href="https://github.com/sudheeshspai">Sudheesh</a> and contributed by <a
+                href="https://github.com/mrfidal">MrFidal</a></p>
     </footer>
 
     <script>
@@ -285,4 +300,5 @@
         }
     </script>
 </body>
+
 </html>
